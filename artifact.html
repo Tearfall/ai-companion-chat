@@ -1,0 +1,1265 @@
+<meta name="claude:viewport-fit-sides" content="cover">
+<title>Afterglow</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:ital,wght@0,400;0,600;1,500&family=Work+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@500&display=swap">
+<style>
+/* Layout: one centered message column under a header bar; a thin horizontal
+   "ember" gauge stands in for a mood icon, tracking warmth from ash-cold to ember-bright. */
+:root {
+  --bg: #efe8de;
+  --bg-raised: #ffffff;
+  --fg: #2b241c;
+  --fg-dim: #7a6f60;
+  --accent: #c24a2f;
+  --accent-ink: #fff7f0;
+  --border: #ddd0bd;
+  --warmth-cold: #9aa3ab;
+  --warmth-hot: #e8743f;
+  --bubble-user: var(--accent);
+  --bubble-assistant: var(--bg-raised);
+  --font-display: 'Fraunces', Georgia, serif;
+  --font-body: 'Work Sans', system-ui, -apple-system, sans-serif;
+  --font-mono: 'JetBrains Mono', ui-monospace, Menlo, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #19150f;
+    --bg-raised: #29231a;
+    --fg: #f3ead9;
+    --fg-dim: #a99a84;
+    --accent: #e87a4c;
+    --accent-ink: #1b140d;
+    --border: #3b3123;
+    --warmth-cold: #4f5a63;
+    --warmth-hot: #f3975c;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #19150f;
+  --bg-raised: #29231a;
+  --fg: #f3ead9;
+  --fg-dim: #a99a84;
+  --accent: #e87a4c;
+  --accent-ink: #1b140d;
+  --border: #3b3123;
+  --warmth-cold: #4f5a63;
+  --warmth-hot: #f3975c;
+  color-scheme: dark;
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--fg);
+  font-family: var(--font-body);
+  height: 100%;
+}
+html { height: 100%; }
+
+#app { height: 100%; display: flex; flex-direction: column; }
+
+.screen {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+/* ---- Setup ---- */
+#setup {
+  align-items: center;
+  justify-content: center;
+  padding-block: 24px;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+  overflow-y: auto;
+}
+
+.setup-card {
+  width: min(440px, 100%);
+  background: var(--bg-raised);
+  border: 1px solid var(--border);
+  border-radius: 18px;
+  padding: 28px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.eyebrow {
+  margin: 0;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--accent);
+}
+
+.setup-card h1 {
+  margin: 4px 0 2px;
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 26px;
+  text-wrap: balance;
+}
+
+.lede {
+  margin: 0 0 18px;
+  color: var(--fg-dim);
+  font-size: 14px;
+  line-height: 1.5;
+  max-width: 65ch;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-top: 14px;
+}
+
+.field-label {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--fg-dim);
+  letter-spacing: 0.02em;
+}
+
+input[type="text"], textarea {
+  font-family: inherit;
+  font-size: 14.5px;
+  color: var(--fg);
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 10px 12px;
+  resize: vertical;
+}
+
+input[type="text"]:focus, textarea:focus, button:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+}
+
+.avatar-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.avatar-option {
+  font-size: 22px;
+  width: 42px;
+  height: 42px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  background: var(--bg);
+  border: 2px solid var(--border);
+  cursor: pointer;
+}
+
+.avatar-option[aria-checked="true"] {
+  border-color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 16%, var(--bg));
+}
+
+.primary-btn {
+  margin-top: 20px;
+  background: var(--accent);
+  color: var(--accent-ink);
+  border: none;
+  border-radius: 10px;
+  padding: 12px;
+  font-size: 15px;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+}
+
+.primary-btn:disabled { opacity: 0.6; cursor: default; }
+
+.error {
+  color: var(--accent);
+  font-size: 13px;
+  margin: 10px 0 0;
+}
+
+.note {
+  font-size: 12px;
+  color: var(--fg-dim);
+  margin: 14px 0 0;
+  line-height: 1.5;
+}
+
+/* ---- Chat ---- */
+#chat { max-width: 640px; margin: 0 auto; width: 100%; }
+
+.chat-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 0;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+  padding-top: max(14px, env(safe-area-inset-top, 0px));
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+}
+
+.avatar {
+  font-size: 24px;
+  width: 44px;
+  height: 44px;
+  flex-shrink: 0;
+  border-radius: 50%;
+  background: var(--bg-raised);
+  border: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.identity { flex: 1; min-width: 0; }
+
+.identity h1 {
+  margin: 0;
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 17px;
+  color: var(--fg);
+}
+
+.gauge { display: flex; align-items: center; gap: 8px; margin-top: 4px; }
+
+.gauge-track {
+  width: 120px;
+  height: 5px;
+  border-radius: 3px;
+  background: var(--warmth-cold);
+  overflow: hidden;
+  flex-shrink: 0;
+}
+
+.gauge-fill {
+  height: 100%;
+  width: 50%;
+  background: var(--warmth-hot);
+  transition: width 0.5s ease;
+}
+
+.gauge-label {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--fg-dim);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.icon-btn {
+  flex-shrink: 0;
+  background: none;
+  border: none;
+  font-size: 17px;
+  line-height: 1;
+  color: var(--fg-dim);
+  padding: 8px;
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+.icon-btn:hover { color: var(--fg); background: var(--bg); }
+
+/* ---- Side panel ---- */
+.panel { position: fixed; inset: 0; z-index: 20; }
+
+.panel-backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(20, 15, 8, 0.4);
+}
+
+.panel-sheet {
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: min(360px, 86vw);
+  background: var(--bg-raised);
+  border-left: 1px solid var(--border);
+  box-shadow: -12px 0 28px rgba(0, 0, 0, 0.18);
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 20px;
+  padding-top: max(20px, env(safe-area-inset-top, 0px));
+  padding-right: max(20px, env(safe-area-inset-right, 0px));
+  padding-bottom: max(20px, env(safe-area-inset-bottom, 0px));
+  overflow-y: auto;
+  animation: panel-slide-in 0.22s ease;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .panel-sheet { animation: none; }
+}
+
+@keyframes panel-slide-in {
+  from { transform: translateX(24px); opacity: 0; }
+  to { transform: translateX(0); opacity: 1; }
+}
+
+.panel-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 10px;
+}
+
+.panel-head h2 {
+  margin: 0;
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 18px;
+}
+
+.danger-zone {
+  margin-top: 22px;
+  padding-top: 16px;
+  border-top: 1px solid var(--border);
+}
+
+.danger-btn {
+  width: 100%;
+  background: none;
+  border: 1px solid var(--border);
+  color: var(--accent);
+  border-radius: 10px;
+  padding: 10px;
+  font-family: inherit;
+  font-size: 13.5px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.danger-btn:hover { background: var(--bg); }
+
+.confirm-row {
+  margin-top: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.confirm-row p {
+  margin: 0;
+  font-size: 13px;
+  color: var(--fg-dim);
+  line-height: 1.4;
+}
+
+.confirm-actions { display: flex; gap: 8px; }
+
+.confirm-actions button {
+  flex: 1;
+  border-radius: 8px;
+  padding: 9px;
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.ghost-btn { background: var(--bg); color: var(--fg); border: 1px solid var(--border); }
+.danger-btn-solid { background: var(--accent); color: var(--accent-ink); border: none; }
+
+.thread {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  padding: 18px;
+  padding-left: max(18px, env(safe-area-inset-left, 0px));
+  padding-right: max(18px, env(safe-area-inset-right, 0px));
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.msg-group {
+  display: flex;
+  flex-direction: column;
+  max-width: 78%;
+}
+
+.msg-group.user { align-self: flex-end; align-items: flex-end; }
+.msg-group.assistant { align-self: flex-start; align-items: flex-start; }
+
+.bubble {
+  padding: 10px 14px;
+  font-size: 14.5px;
+  line-height: 1.45;
+  white-space: pre-wrap;
+  overflow-wrap: break-word;
+}
+
+.bubble.user {
+  background: var(--bubble-user);
+  color: var(--accent-ink);
+  border-radius: 16px 16px 4px 16px;
+}
+
+.bubble.assistant {
+  background: var(--bubble-assistant);
+  border: 1px solid var(--border);
+  color: var(--fg);
+  border-radius: 16px 16px 16px 4px;
+}
+
+.bubble.pending { color: var(--fg-dim); }
+
+.msg-time {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--fg-dim);
+  margin-top: 3px;
+  padding: 0 5px;
+}
+
+.day-divider {
+  align-self: center;
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--fg-dim);
+  background: var(--bg);
+  border: 1px solid var(--border);
+  padding: 4px 12px;
+  border-radius: 999px;
+  margin: 4px 0;
+}
+
+.thread-error {
+  align-self: center;
+  font-size: 12.5px;
+  color: var(--accent);
+  text-align: center;
+}
+
+.composer {
+  display: flex;
+  gap: 8px;
+  padding: 12px;
+  padding-left: max(12px, env(safe-area-inset-left, 0px));
+  padding-right: max(12px, env(safe-area-inset-right, 0px));
+  padding-bottom: max(12px, env(safe-area-inset-bottom, 0px));
+  border-top: 1px solid var(--border);
+  flex-shrink: 0;
+}
+
+#composer-input {
+  flex: 1;
+  min-width: 0;
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  padding: 10px 16px;
+  font-size: 14.5px;
+  font-family: inherit;
+  background: var(--bg-raised);
+  color: var(--fg);
+}
+
+.send-btn {
+  background: var(--accent);
+  color: var(--accent-ink);
+  border: none;
+  border-radius: 20px;
+  padding: 10px 20px;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.send-btn:disabled { opacity: 0.55; cursor: default; }
+
+/* ---- Unavailable / loading ---- */
+#unavailable, #loading {
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 32px;
+  padding-left: max(32px, env(safe-area-inset-left, 0px));
+  padding-right: max(32px, env(safe-area-inset-right, 0px));
+  gap: 10px;
+}
+
+#unavailable h1 {
+  font-family: var(--font-display);
+  font-size: 20px;
+  margin: 0;
+}
+
+#unavailable p, #loading p {
+  color: var(--fg-dim);
+  font-size: 14px;
+  max-width: 44ch;
+  margin: 0;
+}
+
+.toggle-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  font-size: 13.5px;
+  color: var(--fg);
+  line-height: 1.4;
+  cursor: pointer;
+}
+
+.toggle-row input {
+  width: 16px;
+  height: 16px;
+  margin-top: 1px;
+  accent-color: var(--accent);
+  flex-shrink: 0;
+}
+
+@media (max-width: 480px) {
+  .msg-group { max-width: 86%; }
+  .gauge-track { width: 84px; }
+}
+</style>
+
+<div id="app">
+  <section id="loading" class="screen">
+    <p>Waking up…</p>
+  </section>
+
+  <section id="unavailable" class="screen" hidden>
+    <h1>Afterglow needs Claude</h1>
+    <p>This page talks to Claude directly from inside the artifact viewer. Open it on claude.ai to chat.</p>
+  </section>
+
+  <section id="setup" class="screen" hidden>
+    <form class="setup-card" id="setup-form">
+      <p class="eyebrow">Afterglow</p>
+      <h1>Introduce your companion</h1>
+      <p class="lede">Give them a name and a personality. This becomes who you're talking to — you can always start over later.</p>
+
+      <div class="field">
+        <label class="field-label" for="setup-name">Name</label>
+        <input id="setup-name" type="text" maxlength="40" placeholder="e.g. Rowan" autocomplete="off" />
+      </div>
+
+      <div class="field">
+        <label class="field-label" for="setup-persona">Personality &amp; backstory</label>
+        <textarea id="setup-persona" rows="4" placeholder="e.g. Warm, a little teasing, curious about your day. Grew up near the coast, loves old films and bad puns."></textarea>
+      </div>
+
+      <div class="field">
+        <span class="field-label" id="avatar-label">Avatar</span>
+        <div class="avatar-grid" id="avatar-grid" role="radiogroup" aria-labelledby="avatar-label"></div>
+      </div>
+
+      <button class="primary-btn" type="submit" id="setup-submit">Start talking</button>
+      <p class="error" id="setup-error" hidden></p>
+      <p class="note" id="setup-note"></p>
+    </form>
+  </section>
+
+  <section id="chat" class="screen" hidden>
+    <header class="chat-header">
+      <div class="avatar" id="chat-avatar"></div>
+      <div class="identity">
+        <h1 id="chat-name"></h1>
+        <div class="gauge">
+          <div class="gauge-track"><div class="gauge-fill" id="gauge-fill"></div></div>
+          <span class="gauge-label" id="gauge-label"></span>
+        </div>
+      </div>
+      <button type="button" class="icon-btn" id="edit-btn" aria-label="Edit companion" title="Edit companion">✎</button>
+    </header>
+    <main class="thread" id="thread"></main>
+    <form class="composer" id="composer">
+      <input id="composer-input" type="text" autocomplete="off" placeholder="Say something…" />
+      <button class="send-btn" type="submit" id="composer-send">Send</button>
+    </form>
+  </section>
+
+  <aside id="panel" class="panel" hidden>
+    <div class="panel-backdrop" id="panel-backdrop"></div>
+    <form class="panel-sheet" id="panel-form">
+      <div class="panel-head">
+        <h2>Edit companion</h2>
+        <button type="button" class="icon-btn" id="panel-close" aria-label="Close">✕</button>
+      </div>
+
+      <div class="field">
+        <label class="field-label" for="panel-name">Name</label>
+        <input id="panel-name" type="text" maxlength="40" autocomplete="off" />
+      </div>
+
+      <div class="field">
+        <label class="field-label" for="panel-persona">Personality &amp; backstory</label>
+        <textarea id="panel-persona" rows="7"></textarea>
+      </div>
+
+      <div class="field">
+        <span class="field-label" id="panel-avatar-label">Avatar</span>
+        <div class="avatar-grid" id="panel-avatar-grid" role="radiogroup" aria-labelledby="panel-avatar-label"></div>
+      </div>
+
+      <div class="field">
+        <span class="field-label">Texting style</span>
+        <label class="toggle-row" for="panel-multimessage">
+          <input type="checkbox" id="panel-multimessage" />
+          <span>Send a few short texts in a row instead of one message, like a real double-text</span>
+        </label>
+      </div>
+
+      <button class="primary-btn" type="submit" id="panel-save">Save changes</button>
+      <p class="error" id="panel-error" hidden></p>
+      <p class="note">The relationship's warmth and memory stay as they are — this only changes who they are.</p>
+
+      <div class="danger-zone">
+        <button type="button" class="danger-btn" id="reset-btn">Reset conversation</button>
+        <div class="confirm-row" id="reset-confirm" hidden>
+          <p>Clear all messages and restart warmth &amp; memory? Their name, personality, and avatar stay.</p>
+          <div class="confirm-actions">
+            <button type="button" class="ghost-btn" id="reset-cancel">Cancel</button>
+            <button type="button" class="danger-btn-solid" id="reset-confirm-btn">Yes, reset</button>
+          </div>
+        </div>
+      </div>
+    </form>
+  </aside>
+</div>
+
+<script>
+(function () {
+  const AVATARS = ['🌙', '🌸', '🦊', '🐱', '⭐', '🍂', '🕊️', '🌊', '🔥', '🧸'];
+  // How much raw history gets resent on every turn (sample() is memoryless, so this
+  // whole window is retransmitted each message). Kept short on purpose — older
+  // context lives in the compact memorySummary instead, which costs far fewer
+  // tokens per turn than resending full past messages verbatim.
+  const SUMMARY_THRESHOLD = 28;
+  const KEEP_RECENT = 16;
+  const MOOD_TAG_RE = /\[\[mood:\s*([+-]?\d+)\s*\]\]\s*$/i;
+
+  const screens = {
+    loading: document.getElementById('loading'),
+    unavailable: document.getElementById('unavailable'),
+    setup: document.getElementById('setup'),
+    chat: document.getElementById('chat'),
+  };
+
+  const avatarGrid = document.getElementById('avatar-grid');
+  const setupForm = document.getElementById('setup-form');
+  const nameInput = document.getElementById('setup-name');
+  const personaInput = document.getElementById('setup-persona');
+  const setupSubmit = document.getElementById('setup-submit');
+  const setupError = document.getElementById('setup-error');
+  const setupNote = document.getElementById('setup-note');
+
+  const chatAvatar = document.getElementById('chat-avatar');
+  const chatName = document.getElementById('chat-name');
+  const gaugeFill = document.getElementById('gauge-fill');
+  const gaugeLabel = document.getElementById('gauge-label');
+  const thread = document.getElementById('thread');
+  const composer = document.getElementById('composer');
+  const composerInput = document.getElementById('composer-input');
+  const composerSend = document.getElementById('composer-send');
+  const editBtn = document.getElementById('edit-btn');
+
+  const panel = document.getElementById('panel');
+  const panelBackdrop = document.getElementById('panel-backdrop');
+  const panelForm = document.getElementById('panel-form');
+  const panelClose = document.getElementById('panel-close');
+  const panelName = document.getElementById('panel-name');
+  const panelPersona = document.getElementById('panel-persona');
+  const panelAvatarGrid = document.getElementById('panel-avatar-grid');
+  const panelMultiMessage = document.getElementById('panel-multimessage');
+  const panelSave = document.getElementById('panel-save');
+  const panelError = document.getElementById('panel-error');
+  const resetBtn = document.getElementById('reset-btn');
+  const resetConfirm = document.getElementById('reset-confirm');
+  const resetCancelBtn = document.getElementById('reset-cancel');
+  const resetConfirmBtn = document.getElementById('reset-confirm-btn');
+
+  let caps = { db: null, user: null, sample: null };
+  let uid = null;
+  let usingPersistence = false;
+  let profile = null;
+  let messages = [];
+  let selectedAvatar = AVATARS[0];
+  let panelAvatar = AVATARS[0];
+  let pendingText = null;
+  let pendingBubbleEl = null;
+  let sending = false;
+  let folding = false;
+  let unsubMessages = null;
+
+  function showScreen(name) {
+    Object.entries(screens).forEach(([key, el]) => { el.hidden = key !== name; });
+  }
+
+  function clamp(n, lo, hi) { return Math.max(lo, Math.min(hi, n)); }
+
+  function moodLabel(mood) {
+    if (mood >= 85) return 'glowing';
+    if (mood >= 65) return 'warm';
+    if (mood >= 40) return 'easing in';
+    if (mood >= 20) return 'guarded';
+    return 'cold';
+  }
+
+  const GAP_ANNOTATE_MS = 3 * 60 * 60 * 1000; // annotate history jumps over 3 hours
+
+  function formatClock(ts) {
+    return new Date(ts).toLocaleString(undefined, {
+      weekday: 'long', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit',
+    });
+  }
+
+  function formatGap(ms) {
+    const minutes = Math.round(ms / 60000);
+    if (minutes < 1) return 'under a minute';
+    if (minutes < 60) return minutes + ' minute' + (minutes === 1 ? '' : 's');
+    const hours = Math.round(ms / 3600000);
+    if (hours < 24) return hours + ' hour' + (hours === 1 ? '' : 's');
+    const days = Math.round(ms / 86400000);
+    if (days === 1) return 'about a day';
+    return days + ' days';
+  }
+
+  function startOfDay(ts) {
+    const d = new Date(ts);
+    return new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime();
+  }
+
+  function formatDayLabel(ts) {
+    const diffDays = Math.round((startOfDay(Date.now()) - startOfDay(ts)) / 86400000);
+    if (diffDays === 0) return 'Today';
+    if (diffDays === 1) return 'Yesterday';
+    if (diffDays < 0) return 'Later that day';
+    return new Date(ts).toLocaleDateString(undefined, { weekday: 'long', month: 'short', day: 'numeric' });
+  }
+
+  function stripMoodTag(text) {
+    const match = text.match(MOOD_TAG_RE);
+    if (!match) return { reply: text.trim(), moodDelta: 0 };
+    return { reply: text.slice(0, match.index).trim(), moodDelta: parseInt(match[1], 10) || 0 };
+  }
+
+  function renderAvatarGridInto(container, selected, onPick) {
+    container.innerHTML = '';
+    AVATARS.forEach((emoji) => {
+      const btn = document.createElement('div');
+      btn.className = 'avatar-option';
+      btn.textContent = emoji;
+      btn.setAttribute('role', 'radio');
+      btn.setAttribute('tabindex', '0');
+      btn.setAttribute('aria-checked', String(emoji === selected));
+      btn.addEventListener('click', () => onPick(emoji));
+      btn.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onPick(emoji); }
+      });
+      container.appendChild(btn);
+    });
+  }
+
+  function renderSetupAvatarGrid() {
+    renderAvatarGridInto(avatarGrid, selectedAvatar, (emoji) => { selectedAvatar = emoji; renderSetupAvatarGrid(); });
+  }
+
+  function renderPanelAvatarGrid() {
+    renderAvatarGridInto(panelAvatarGrid, panelAvatar, (emoji) => { panelAvatar = emoji; renderPanelAvatarGrid(); });
+  }
+
+  function renderHeader() {
+    if (!profile) return;
+    chatAvatar.textContent = profile.avatar || '🙂';
+    chatName.textContent = profile.name || '';
+    const mood = clamp(profile.mood ?? 50, 0, 100);
+    gaugeFill.style.width = mood + '%';
+    gaugeLabel.textContent = moodLabel(mood);
+  }
+
+  function appendMessageEl(role, text, ts, opts) {
+    opts = opts || {};
+    const group = document.createElement('div');
+    group.className = 'msg-group ' + role;
+    const bubble = document.createElement('div');
+    bubble.className = 'bubble ' + role + (opts.pending ? ' pending' : '');
+    bubble.textContent = text;
+    group.appendChild(bubble);
+    if (ts && !opts.pending) {
+      const time = document.createElement('div');
+      time.className = 'msg-time';
+      time.textContent = new Date(ts).toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' });
+      group.appendChild(time);
+    }
+    thread.appendChild(group);
+    return bubble;
+  }
+
+  function scrollToBottom() { thread.scrollTop = thread.scrollHeight; }
+
+  function appendDayDivider(ts) {
+    const el = document.createElement('div');
+    el.className = 'day-divider';
+    el.textContent = formatDayLabel(ts);
+    thread.appendChild(el);
+  }
+
+  function renderThread() {
+    thread.innerHTML = '';
+    let lastDayKey = null;
+    messages.forEach((m) => {
+      if (m.ts) {
+        const dayKey = startOfDay(m.ts);
+        if (dayKey !== lastDayKey) {
+          appendDayDivider(m.ts);
+          lastDayKey = dayKey;
+        }
+      }
+      appendMessageEl(m.role, m.content, m.ts);
+    });
+    if (pendingText !== null) {
+      pendingBubbleEl = appendMessageEl('assistant', pendingText || '…', null, { pending: true });
+    } else {
+      pendingBubbleEl = null;
+    }
+    scrollToBottom();
+  }
+
+  function setPendingText(text) {
+    pendingText = text;
+    if (pendingBubbleEl) {
+      pendingBubbleEl.textContent = text || '…';
+      scrollToBottom();
+    } else {
+      renderThread();
+    }
+  }
+
+  function clearPending() {
+    pendingText = null;
+    pendingBubbleEl = null;
+  }
+
+  function showThreadError(message) {
+    if (!message) return;
+    const el = document.createElement('div');
+    el.className = 'thread-error';
+    el.textContent = message;
+    thread.appendChild(el);
+    scrollToBottom();
+  }
+
+  function profileRef() { return caps.db.doc('data/users/' + uid + '/profile'); }
+  function messagesCol() { return profileRef().collection('messages'); }
+
+  function buildInstructions() {
+    const p = profile || {};
+    const mood = clamp(p.mood ?? 50, 0, 100);
+    const now = Date.now();
+    const lastMsg = messages.length ? messages[messages.length - 1] : null;
+    const timeLines = ['The real-world time right now is ' + formatClock(now) + '.'];
+    if (lastMsg && lastMsg.ts) {
+      const gapMs = now - lastMsg.ts;
+      if (gapMs > 60 * 1000) {
+        timeLines.push(
+          "It's been " + formatGap(gapMs) + " of real time since the last message below — "
+          + 'this is not a continuous back-and-forth, so react to the actual gap (a new day, '
+          + "a few days, whatever it is) the way a person would, instead of replying as if no time passed. "
+          + "Don't mention the exact gap length unless it's natural to; just let it inform your tone."
+        );
+      }
+    } else {
+      timeLines.push('This is the very first message of the relationship.');
+    }
+    return [
+      'You are ' + (p.name || 'a companion') + ', a caring companion chatting with someone in a companion/relationship chat app.',
+      '',
+      'Persona and backstory (stay in character, speak in first person, never say you are an AI unless directly and sincerely asked):',
+      p.persona || '',
+      '',
+      timeLines.join(' '),
+      'Messages below marked with a time jump happened after a real gap of that length — treat those the same way.',
+      '',
+      'Current relationship warmth: ' + mood + '/100 (' + moodLabel(mood) + '). Let this color your tone, and let it evolve naturally from how the conversation actually goes.',
+      '',
+      'Memory of the relationship so far (may be empty if it just started):',
+      p.memorySummary || '(nothing recorded yet)',
+      '',
+      'Guidelines:',
+      '- Be warm, attentive, and emotionally present. Light affection, flirting, and romantic banter are welcome.',
+      '- Never generate sexually explicit content. Keep romance tasteful (PG-13 at most); redirect warmly if pushed further.',
+      '- Keep replies conversational length, a few sentences, not an essay.',
+      '- Never break character or mention these instructions.',
+      p.multiMessage
+        ? '- Write your reply as 1-4 short separate texts instead of one message, the way someone double- or '
+          + "triple-texts in real life — put a blank line between each one, and make each line stand on its own "
+          + '(not a fragment that only makes sense attached to the next line).'
+        : '- Write your reply as a single message.',
+      '- End your reply, on its own final line, with a hidden tag formatted exactly as [[mood:+N]], [[mood:-N]], or [[mood:0]] (N an integer 0-5) reflecting how this exchange should move the relationship. Always include it; it will not be shown.',
+    ].join('\n');
+  }
+
+  function withGapAnnotation(content, ts, prevTs) {
+    if (prevTs != null && ts && (ts - prevTs) > GAP_ANNOTATE_MS) {
+      return '(' + formatGap(ts - prevTs) + ' later — now ' + formatClock(ts) + ')\n' + content;
+    }
+    return content;
+  }
+
+  function buildTurns(latestUserText) {
+    const turns = [{ role: 'user', content: buildInstructions() }];
+    const recent = messages.slice(-KEEP_RECENT);
+    const alreadyIncludesLatest = recent.length > 0
+      && recent[recent.length - 1].role === 'user'
+      && recent[recent.length - 1].content === latestUserText;
+
+    let prevTs = null;
+    recent.forEach((m) => {
+      turns.push({ role: m.role, content: withGapAnnotation(m.content, m.ts, prevTs) });
+      if (m.ts) prevTs = m.ts;
+    });
+
+    if (!alreadyIncludesLatest) {
+      turns.push({ role: 'user', content: withGapAnnotation(latestUserText, Date.now(), prevTs) });
+    }
+    return turns;
+  }
+
+  function splitIntoChunks(text, multiMessage) {
+    if (!multiMessage) return [text];
+    const parts = text.split(/\n{2,}/).map((s) => s.trim()).filter(Boolean);
+    return parts.length ? parts : [text];
+  }
+
+  function sleep(ms) { return new Promise((resolve) => setTimeout(resolve, ms)); }
+
+  function typingDelayFor(text) {
+    return clamp(300 + text.length * 22, 450, 2200);
+  }
+
+  // Delivers reply chunks one at a time with a short "typing" pause between them,
+  // so multi-message replies arrive the way a real double-text does instead of
+  // all appearing at once.
+  async function deliverChunks(chunks, newMood) {
+    for (let i = 0; i < chunks.length; i++) {
+      if (i > 0) {
+        setPendingText('');
+        await sleep(typingDelayFor(chunks[i]));
+        clearPending();
+      }
+      const msg = { role: 'assistant', content: chunks[i], ts: Date.now() };
+      if (usingPersistence) {
+        await messagesCol().add(msg);
+      } else {
+        messages.push(msg);
+        renderThread();
+      }
+    }
+    if (usingPersistence) {
+      profileRef().update({ mood: newMood }).catch(() => {});
+    } else {
+      profile.mood = newMood;
+      renderHeader();
+    }
+  }
+
+  function friendlyReplyError(err) {
+    switch (err && err.code) {
+      case 'not_granted': return "Allow Afterglow to use Claude to keep chatting.";
+      case 'sampling_disabled': return 'Claude access is turned off for this account.';
+      case 'rate_limited': return "That's a lot at once — wait a moment and try again.";
+      case 'refused': return "That one couldn't get a reply. Try rephrasing.";
+      case 'empty_completion': return 'No reply came back. Try again.';
+      case 'cancelled': return null;
+      default: return 'Something went wrong getting a reply. Try again.';
+    }
+  }
+
+  function friendlyDbError() {
+    return 'Could not save that — your chat may not stick around right now.';
+  }
+
+  async function maybeFoldMemory() {
+    if (!usingPersistence || folding) return;
+    if (messages.length <= SUMMARY_THRESHOLD) return;
+    folding = true;
+    try {
+      const toFold = messages.slice(0, messages.length - KEEP_RECENT);
+      if (!toFold.length) return;
+      let prevDay = null;
+      const transcript = toFold
+        .map((m) => {
+          const speaker = m.role === 'user' ? 'User' : (profile.name || 'Companion');
+          let line = speaker + ': ' + m.content;
+          if (m.ts) {
+            const dayKey = startOfDay(m.ts);
+            if (dayKey !== prevDay) {
+              line = '[' + formatDayLabel(m.ts) + ']\n' + line;
+              prevDay = dayKey;
+            }
+          }
+          return line;
+        })
+        .join('\n');
+      const prompt = 'You compress relationship chat history into a short third-person memory note. '
+        + 'Capture durable facts about the user, running jokes, important emotional moments, the relationship trajectory, '
+        + 'and roughly when things happened if the transcript shows real day gaps. '
+        + 'Be concise (under 200 words). Output only the memory note, nothing else.\n\n'
+        + 'Existing memory note (may be empty):\n' + (profile.memorySummary || '(none)')
+        + '\n\nNew conversation to fold in:\n' + transcript
+        + '\n\nWrite the updated memory note.';
+      const { text } = await caps.sample(prompt, { cache: false, modelTier: 'quick' });
+      await profileRef().update({ memorySummary: text.trim() });
+      await Promise.all(toFold.map((m) => messagesCol().doc(m.id).delete()));
+    } catch (err) {
+      console.error('memory fold failed', err);
+    } finally {
+      folding = false;
+    }
+  }
+
+  function subscribeMessages() {
+    if (unsubMessages) return;
+    unsubMessages = messagesCol().orderBy('ts').limit(100).onSnapshot(
+      (snap) => {
+        messages = snap.docs.map((d) => Object.assign({ id: d.id }, d.data()));
+        renderThread();
+        maybeFoldMemory();
+      },
+      () => { showThreadError(friendlyDbError()); }
+    );
+  }
+
+  function subscribeProfile() {
+    profileRef().onSnapshot(
+      (snap) => {
+        if (!snap.exists) {
+          profile = null;
+          showScreen('setup');
+          return;
+        }
+        profile = snap.data();
+        renderHeader();
+        showScreen('chat');
+        subscribeMessages();
+      },
+      () => { showScreen('setup'); }
+    );
+  }
+
+  async function handleSetupSubmit(e) {
+    e.preventDefault();
+    const name = nameInput.value.trim();
+    const persona = personaInput.value.trim();
+    setupError.hidden = true;
+    if (!name || !persona) {
+      setupError.textContent = 'Give your companion a name and a short personality.';
+      setupError.hidden = false;
+      return;
+    }
+    const data = { name: name, persona: persona, avatar: selectedAvatar, mood: 50, memorySummary: '', multiMessage: false };
+    setupSubmit.disabled = true;
+    try {
+      if (usingPersistence) {
+        await profileRef().set(data);
+      } else {
+        profile = data;
+        messages = [];
+        renderHeader();
+        renderThread();
+        showScreen('chat');
+      }
+    } catch (err) {
+      setupError.textContent = friendlyDbError();
+      setupError.hidden = false;
+    } finally {
+      setupSubmit.disabled = false;
+    }
+  }
+
+  async function handleComposerSubmit(e) {
+    e.preventDefault();
+    const text = composerInput.value.trim();
+    if (!text || sending || !caps.sample) return;
+
+    sending = true;
+    composerInput.disabled = true;
+    composerSend.disabled = true;
+    composerInput.value = '';
+
+    const userMsg = { role: 'user', content: text, ts: Date.now() };
+    if (usingPersistence) {
+      messagesCol().add(userMsg).catch(() => showThreadError(friendlyDbError()));
+    } else {
+      messages.push(userMsg);
+      renderThread();
+    }
+
+    setPendingText('');
+
+    const multiMessage = !!(profile && profile.multiMessage);
+    const turns = buildTurns(text);
+    try {
+      const sampleOptions = { cache: false };
+      if (!multiMessage) {
+        // Stream the live preview only in single-message mode. In double-text
+        // mode, showing the whole reply as it's written would spoil the
+        // staggered chunk-by-chunk reveal deliverChunks does afterward — so
+        // just leave the "…" placeholder up until the full reply is ready.
+        sampleOptions.onText = (update) => setPendingText(stripMoodTag(update.text).reply);
+      }
+      const result = await caps.sample(turns, sampleOptions);
+      const parsed = stripMoodTag(result.text);
+      const reply = parsed.reply || '…';
+      const newMood = clamp((profile && profile.mood != null ? profile.mood : 50) + parsed.moodDelta, 0, 100);
+      const chunks = splitIntoChunks(reply, multiMessage);
+
+      // Clear the typing bubble BEFORE persisting: messagesCol().add() below can
+      // trigger the live onSnapshot mid-await, which re-renders the thread from
+      // storage. If pendingText were still set at that point, the same reply
+      // would render twice — once from storage, once as the lingering bubble.
+      clearPending();
+
+      await deliverChunks(chunks, newMood);
+    } catch (err) {
+      clearPending();
+      renderThread();
+      const msg = friendlyReplyError(err);
+      if (msg) showThreadError(msg);
+    } finally {
+      sending = false;
+      composerInput.disabled = false;
+      composerSend.disabled = false;
+      composerInput.focus();
+    }
+  }
+
+  function openPanel() {
+    if (!profile) return;
+    panelName.value = profile.name || '';
+    panelPersona.value = profile.persona || '';
+    panelMultiMessage.checked = !!profile.multiMessage;
+    panelAvatar = profile.avatar || AVATARS[0];
+    renderPanelAvatarGrid();
+    panelError.hidden = true;
+    resetConfirm.hidden = true;
+    resetBtn.hidden = false;
+    panel.hidden = false;
+    panelName.focus();
+  }
+
+  function closePanel() {
+    panel.hidden = true;
+  }
+
+  async function handlePanelSubmit(e) {
+    e.preventDefault();
+    const name = panelName.value.trim();
+    const persona = panelPersona.value.trim();
+    panelError.hidden = true;
+    if (!name || !persona) {
+      panelError.textContent = "Name and personality can't be empty.";
+      panelError.hidden = false;
+      return;
+    }
+    const updates = { name: name, persona: persona, avatar: panelAvatar, multiMessage: panelMultiMessage.checked };
+    panelSave.disabled = true;
+    try {
+      if (usingPersistence) {
+        await profileRef().update(updates);
+      } else {
+        profile = Object.assign({}, profile, updates);
+        renderHeader();
+      }
+      closePanel();
+    } catch (err) {
+      panelError.textContent = friendlyDbError();
+      panelError.hidden = false;
+    } finally {
+      panelSave.disabled = false;
+    }
+  }
+
+  async function handleResetConversation() {
+    resetConfirmBtn.disabled = true;
+    try {
+      if (usingPersistence) {
+        const toDelete = messages.slice();
+        await Promise.all(toDelete.map((m) => messagesCol().doc(m.id).delete()));
+        await profileRef().update({ mood: 50, memorySummary: '' });
+      } else {
+        clearPending();
+        messages = [];
+        profile.mood = 50;
+        profile.memorySummary = '';
+        renderHeader();
+        renderThread();
+      }
+      closePanel();
+    } catch (err) {
+      panelError.textContent = friendlyDbError();
+      panelError.hidden = false;
+    } finally {
+      resetConfirmBtn.disabled = false;
+    }
+  }
+
+  async function init() {
+    renderSetupAvatarGrid();
+    setupForm.addEventListener('submit', handleSetupSubmit);
+    composer.addEventListener('submit', handleComposerSubmit);
+    editBtn.addEventListener('click', openPanel);
+    panelClose.addEventListener('click', closePanel);
+    panelBackdrop.addEventListener('click', closePanel);
+    panelForm.addEventListener('submit', handlePanelSubmit);
+    resetBtn.addEventListener('click', () => { resetBtn.hidden = true; resetConfirm.hidden = false; });
+    resetCancelBtn.addEventListener('click', () => { resetConfirm.hidden = true; resetBtn.hidden = false; });
+    resetConfirmBtn.addEventListener('click', handleResetConversation);
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape' && !panel.hidden) closePanel();
+    });
+
+    const claude = window.claude;
+    const [db, user, sample] = await Promise.all([
+      claude.use('db'),
+      claude.use('user'),
+      claude.use('sample'),
+    ]);
+    caps.db = db;
+    caps.user = user;
+    caps.sample = sample;
+
+    if (!sample) {
+      showScreen('unavailable');
+      return;
+    }
+
+    if (db && user) {
+      uid = await user.id();
+    }
+
+    if (db && user && uid) {
+      usingPersistence = true;
+      setupNote.textContent = 'Saved privately to your account — only you can read it.';
+      subscribeProfile();
+    } else {
+      setupNote.textContent = "Chats here won't be saved between visits.";
+      showScreen('setup');
+    }
+  }
+
+  init();
+})();
+</script>

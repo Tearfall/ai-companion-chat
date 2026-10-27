@@ -1,0 +1,68 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Companion Chat</title>
+  <link rel="stylesheet" href="style.css" />
+  <link rel="manifest" href="manifest.json" />
+  <meta name="theme-color" content="#db2777" />
+  <link rel="apple-touch-icon" href="icons/icon-192.png" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-title" content="Companion" />
+</head>
+<body>
+  <div id="persona-list-screen" class="screen hidden">
+    <div class="persona-list-card">
+      <h1>Your companions</h1>
+      <div id="persona-cards" class="persona-cards"></div>
+      <button id="new-persona-btn" class="new-persona-btn">+ New persona</button>
+    </div>
+  </div>
+
+  <div id="setup-screen" class="screen hidden">
+    <div class="setup-card">
+      <h1 id="setup-title">Create your companion</h1>
+
+      <label for="name-input">Name</label>
+      <input id="name-input" type="text" placeholder="e.g. Luna" maxlength="40" />
+
+      <label for="persona-input">Personality &amp; backstory</label>
+      <textarea id="persona-input" rows="5" placeholder="e.g. Warm, playful, curious about the user's day. Loves astronomy and bad puns. Grew up near the coast."></textarea>
+
+      <label>Avatar</label>
+      <div id="avatar-grid" class="avatar-grid"></div>
+
+      <button id="save-btn">Start chatting</button>
+      <button id="back-btn" class="secondary-btn hidden">Back</button>
+      <button id="delete-btn" class="delete-persona-btn hidden">Delete this persona</button>
+      <p id="setup-error" class="error"></p>
+    </div>
+  </div>
+
+  <div id="chat-screen" class="screen hidden">
+    <header class="chat-header">
+      <button id="switch-persona-btn" class="switch-persona-btn" title="Switch persona">&larr;</button>
+      <div class="companion-avatar" id="header-avatar"></div>
+      <div class="companion-info">
+        <div class="companion-name" id="header-name"></div>
+        <div class="mood-bar-track">
+          <div class="mood-bar-fill" id="mood-bar-fill"></div>
+        </div>
+      </div>
+      <button id="edit-persona-btn" class="edit-persona-btn" title="Edit persona">&#9998;</button>
+    </header>
+
+    <div id="offline-banner" class="offline-banner hidden">You're offline — messages can't be sent right now.</div>
+
+    <main id="messages" class="messages"></main>
+
+    <form id="chat-form" class="chat-form">
+      <input id="chat-input" type="text" autocomplete="off" placeholder="Say something..." />
+      <button type="submit">Send</button>
+    </form>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>

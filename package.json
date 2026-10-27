@@ -1,0 +1,16 @@
+{
+  "name": "ai-companion-chat",
+  "version": "1.0.0",
+  "description": "A multi-persona AI companion chat PWA with memory and mood, powered by the free Groq API.",
+  "main": "server/server.js",
+  "type": "commonjs",
+  "scripts": {
+    "start": "node server/server.js",
+    "dev": "node --watch server/server.js"
+  },
+  "dependencies": {
+    "better-sqlite3": "^11.5.0",
+    "dotenv": "^16.4.5",
+    "express": "^4.21.1"
+  }
+}
