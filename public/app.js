@@ -129,14 +129,7 @@ function setActivePersonaId(id) {
 }
 
 function setAvatarEl(container, avatar) {
-  container.innerHTML = '';
-  if (/^https?:\/\//.test(avatar)) {
-    const img = document.createElement('img');
-    img.src = avatar;
-    container.appendChild(img);
-  } else {
-    container.textContent = avatar;
-  }
+  container.textContent = avatar;
 }
 
 function renderAvatarGrid() {
@@ -592,28 +585,35 @@ settingsSaveBtn.addEventListener('click', async () => {
   }
 });
 
-saveBtn.addEventListener('click', async () => {
+// creates or updates the persona from the setup form; returns the saved persona, or null if the
+// form isn't filled in (after showing why)
+async function savePersonaForm() {
   const name = nameInput.value.trim();
   const persona = personaInput.value.trim();
   if (!name || !persona) {
     setupError.textContent = 'Please fill in a name and a personality description.';
-    return;
+    return null;
   }
 
+  const isEditing = editingPersonaId != null;
+  const url = isEditing ? `/api/personas/${editingPersonaId}` : '/api/personas';
+  const method = isEditing ? 'PUT' : 'POST';
+  const res = await fetch(url, {
+    method,
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ name, persona, avatar: selectedAvatar }),
+  });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.error || 'Something went wrong');
+  return data.persona;
+}
+
+saveBtn.addEventListener('click', async () => {
   saveBtn.disabled = true;
   setupError.textContent = '';
   try {
-    const isEditing = editingPersonaId != null;
-    const url = isEditing ? `/api/personas/${editingPersonaId}` : '/api/personas';
-    const method = isEditing ? 'PUT' : 'POST';
-    const res = await fetch(url, {
-      method,
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ name, persona, avatar: selectedAvatar }),
-    });
-    const data = await res.json();
-    if (!res.ok) throw new Error(data.error || 'Something went wrong');
-    await openChat(data.persona.id);
+    const saved = await savePersonaForm();
+    if (saved) await openChat(saved.id);
   } catch (err) {
     setupError.textContent = err.message;
   } finally {

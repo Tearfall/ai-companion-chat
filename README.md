@@ -76,8 +76,7 @@ install it as an app via the browser's "Add to Home Screen" / install prompt.
 - **Mood** — the model is asked to append a hidden `[[mood:+N]]` / `[[mood:-N]]` tag after each
   reply reflecting how that exchange affected the relationship; the server strips the tag,
   applies the delta to a 0–100 mood score per persona, and the UI shows it as a bar.
-- **Avatar** — pick an emoji in the setup screen, or pass an image URL as the avatar value via
-  the API if you want a picture instead.
+- **Avatar** — pick an emoji in the setup screen.
 - **Offline/PWA** — installable with its own icon; a service worker caches the app shell and the
   persona list/chat history so the app opens instantly and past conversations are still viewable
   offline. Sending a new message still needs a connection and fails gracefully (with a visible
