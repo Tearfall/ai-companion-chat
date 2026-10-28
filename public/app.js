@@ -4,6 +4,14 @@ const ACTIVE_PERSONA_KEY = 'activePersonaId';
 const personaListScreen = document.getElementById('persona-list-screen');
 const personaCardsEl = document.getElementById('persona-cards');
 const newPersonaBtn = document.getElementById('new-persona-btn');
+const settingsBtn = document.getElementById('settings-btn');
+
+const settingsScreen = document.getElementById('settings-screen');
+const userContextInput = document.getElementById('user-context-input');
+const instructionsInput = document.getElementById('instructions-input');
+const settingsSaveBtn = document.getElementById('settings-save-btn');
+const settingsBackBtn = document.getElementById('settings-back-btn');
+const settingsError = document.getElementById('settings-error');
 
 const setupScreen = document.getElementById('setup-screen');
 const setupTitle = document.getElementById('setup-title');
@@ -34,6 +42,7 @@ let knownPersonaCount = 0;
 function hideAllScreens() {
   personaListScreen.classList.add('hidden');
   setupScreen.classList.add('hidden');
+  settingsScreen.classList.add('hidden');
   chatScreen.classList.add('hidden');
 }
 
@@ -92,6 +101,12 @@ async function fetchPersonas() {
   const res = await fetch('/api/personas');
   const { personas } = await res.json();
   return personas;
+}
+
+async function showPersonaList() {
+  const personas = await fetchPersonas();
+  knownPersonaCount = personas.length;
+  showPersonaListScreen(personas);
 }
 
 function showPersonaListScreen(personas) {
@@ -164,6 +179,22 @@ function showSetupScreen(persona) {
   nameInput.focus();
 }
 
+async function showSettingsScreen() {
+  hideAllScreens();
+  settingsScreen.classList.remove('hidden');
+  settingsError.textContent = '';
+
+  try {
+    const res = await fetch('/api/settings');
+    const { settings } = await res.json();
+    userContextInput.value = settings.user_context;
+    instructionsInput.value = settings.custom_instructions;
+  } catch (err) {
+    settingsError.textContent = "Couldn't load your instructions.";
+  }
+  userContextInput.focus();
+}
+
 async function openChat(personaId) {
   const res = await fetch(`/api/personas/${personaId}`);
   if (!res.ok) {
@@ -218,20 +249,38 @@ async function boot() {
 
 newPersonaBtn.addEventListener('click', () => showSetupScreen(null));
 
-backBtn.addEventListener('click', async () => {
-  const personas = await fetchPersonas();
-  knownPersonaCount = personas.length;
-  showPersonaListScreen(personas);
-});
+backBtn.addEventListener('click', showPersonaList);
 
-switchPersonaBtn.addEventListener('click', async () => {
-  const personas = await fetchPersonas();
-  knownPersonaCount = personas.length;
-  showPersonaListScreen(personas);
-});
+switchPersonaBtn.addEventListener('click', showPersonaList);
 
 editPersonaBtn.addEventListener('click', () => {
   if (activeChatPersona) showSetupScreen(activeChatPersona);
+});
+
+settingsBtn.addEventListener('click', showSettingsScreen);
+
+settingsBackBtn.addEventListener('click', showPersonaList);
+
+settingsSaveBtn.addEventListener('click', async () => {
+  settingsSaveBtn.disabled = true;
+  settingsError.textContent = '';
+  try {
+    const res = await fetch('/api/settings', {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        user_context: userContextInput.value,
+        custom_instructions: instructionsInput.value,
+      }),
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Something went wrong');
+    await showPersonaList();
+  } catch (err) {
+    settingsError.textContent = err.message;
+  } finally {
+    settingsSaveBtn.disabled = false;
+  }
 });
 
 saveBtn.addEventListener('click', async () => {

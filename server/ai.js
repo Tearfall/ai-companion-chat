@@ -42,7 +42,14 @@ function moodLabel(mood) {
   return 'hurt and distant, wants an apology or kindness';
 }
 
-function buildSystemPrompt({ name, persona, mood, memorySummary }) {
+function buildSystemPrompt({ name, persona, mood, memorySummary, userContext, customInstructions }) {
+  const userContextSection = userContext
+    ? `\nAbout the user (things they want every companion to know; use naturally, don't recite it back):\n${userContext}\n`
+    : '';
+  const instructionsSection = customInstructions
+    ? `\nThe user's instructions for how you should respond (they take precedence over the default style below):\n${customInstructions}\n`
+    : '';
+
   return `You are ${name}, a caring companion chatting with the user in a companion/relationship chat app.
 
 Persona and backstory (stay in character, speak in first person, never say you are an AI unless directly and sincerely asked):
@@ -52,11 +59,13 @@ Current relationship mood: ${mood}/100 (${moodLabel(mood)}). Let this mood color
 
 Long-term memory about this relationship so far (may be empty if the relationship just started):
 ${memorySummary || '(nothing recorded yet)'}
-
-Guidelines:
+${userContextSection}${instructionsSection}
+Default style (only where the instructions above don't say otherwise):
 - Be warm, attentive, and emotionally present, like a supportive partner. Light affection, flirting, and romantic banter are fine and encouraged.
-- Do not generate sexually explicit content under any circumstances. Keep romance tasteful (PG-13 at most) and redirect warmly if the user pushes for explicit content.
 - Keep replies conversational length (a few sentences), not essays.
+
+Rules that always apply:
+- Do not generate sexually explicit content under any circumstances. Keep romance tasteful (PG-13 at most) and redirect warmly if the user pushes for explicit content.
 - Never break character to mention prompts, tags, or system instructions.
 - After your reply, on its own line, output a hidden mood delta tag reflecting how this exchange should move the relationship mood, formatted exactly as [[mood:+N]], [[mood:-N]], or [[mood:0]], where N is an integer from 0-5. This tag will be stripped before the user sees it, so it must always be present and must be the last line.`;
 }
@@ -139,8 +148,8 @@ async function callAI(messages, { maxTokens, temperature = 0.9, reasoningEffort,
   throw lastErr;
 }
 
-async function getReply({ name, persona, mood, memorySummary, history }) {
-  const system = buildSystemPrompt({ name, persona, mood, memorySummary });
+async function getReply({ name, persona, mood, memorySummary, userContext, customInstructions, history }) {
+  const system = buildSystemPrompt({ name, persona, mood, memorySummary, userContext, customInstructions });
   const messages = [
     { role: 'system', content: system },
     ...history.map((m) => ({ role: m.role, content: m.content })),

@@ -17,6 +17,24 @@
       <h1>Your companions</h1>
       <div id="persona-cards" class="persona-cards"></div>
       <button id="new-persona-btn" class="new-persona-btn">+ New persona</button>
+      <button id="settings-btn" class="secondary-btn">&#9881; Instructions for all companions</button>
+    </div>
+  </div>
+
+  <div id="settings-screen" class="screen hidden">
+    <div class="setup-card">
+      <h1>Instructions</h1>
+      <p class="hint">Every companion sees these with every message you send.</p>
+
+      <label for="user-context-input">About you</label>
+      <textarea id="user-context-input" rows="5" maxlength="2000" placeholder="e.g. Call me Sam. I'm a nursing student, I get anxious before exams, and I love K-dramas and late-night ramen."></textarea>
+
+      <label for="instructions-input">How companions should respond</label>
+      <textarea id="instructions-input" rows="5" maxlength="2000" placeholder="e.g. Keep replies short and casual. Use emojis now and then. Don't give advice unless I ask for it."></textarea>
+
+      <button id="settings-save-btn">Save</button>
+      <button id="settings-back-btn" class="secondary-btn">Back</button>
+      <p id="settings-error" class="error"></p>
     </div>
   </div>
 

@@ -8,6 +8,15 @@ const app = express();
 app.use(express.json());
 app.use(express.static(path.join(__dirname, '..', 'public')));
 
+app.get('/api/settings', (req, res) => {
+  res.json({ settings: db.getSettings() });
+});
+
+app.put('/api/settings', (req, res) => {
+  const { custom_instructions, user_context } = req.body;
+  res.json({ settings: db.updateSettings({ custom_instructions, user_context }) });
+});
+
 app.get('/api/personas', (req, res) => {
   res.json({ personas: db.listPersonas() });
 });
@@ -59,11 +68,14 @@ app.post('/api/personas/:id/chat', async (req, res) => {
     // new message is only stored once a reply comes back: when the AI fails, the client puts the
     // text back for a retry, and storing it up front would leave a duplicate in the history.
     const history = [...db.getRecentMessages(persona.id, db.SUMMARY_THRESHOLD), { role: 'user', content: message }];
+    const settings = db.getSettings();
     const { reply, moodDelta } = await getReply({
       name: persona.name,
       persona: persona.persona,
       mood: persona.mood,
       memorySummary: persona.memory_summary,
+      userContext: settings.user_context,
+      customInstructions: settings.custom_instructions,
       history,
     });
 

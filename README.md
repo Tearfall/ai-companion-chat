@@ -37,6 +37,10 @@ install it as an app via the browser's "Add to Home Screen" / install prompt.
 - **Personas** — create as many companions as you like, each with its own name, avatar, and
   personality/backstory blurb (becomes part of that persona's system prompt). Switch between
   them from the persona list screen; each persona keeps its own independent mood and memory.
+- **Global instructions** — "Instructions for all companions" on the persona list screen has two
+  fields that go into every persona's system prompt on every message: *About you* (facts you
+  want every companion to know) and *How companions should respond* (style rules, like custom
+  instructions in Claude/ChatGPT). They can't override the content guidelines.
 - **Memory** — all messages are stored per-persona in a local SQLite file (`data.sqlite`), and
   every not-yet-summarized message is sent with each request. Once a persona's conversation
   grows past ~40 messages, the oldest ones are folded into a running summary (via an AI call)

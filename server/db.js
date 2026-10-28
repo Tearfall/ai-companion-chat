@@ -26,7 +26,15 @@ db.exec(`
   );
 
   CREATE INDEX IF NOT EXISTS idx_messages_persona_id ON messages (persona_id, id);
+
+  CREATE TABLE IF NOT EXISTS settings (
+    key TEXT PRIMARY KEY,
+    value TEXT NOT NULL DEFAULT ''
+  );
 `);
+
+// global settings shared by every persona: custom instructions and what the user has told us about themselves
+const SETTING_KEYS = ['custom_instructions', 'user_context'];
 
 const SUMMARY_THRESHOLD = 40; // messages kept verbatim (per persona) before older ones get folded into memory_summary
 const KEEP_RECENT = 20; // how many recent messages stay verbatim after a summary fold
@@ -127,6 +135,23 @@ function foldMessages(personaId, summary, ids) {
   })();
 }
 
+function getSettings() {
+  const settings = Object.fromEntries(SETTING_KEYS.map((key) => [key, '']));
+  db.prepare('SELECT key, value FROM settings').all().forEach(({ key, value }) => {
+    if (key in settings) settings[key] = value;
+  });
+  return settings;
+}
+
+function updateSettings(changes) {
+  const stmt = db.prepare(
+    'INSERT INTO settings (key, value) VALUES (?, ?) ON CONFLICT(key) DO UPDATE SET value = excluded.value'
+  );
+  const tx = db.transaction((entries) => entries.forEach(([key, value]) => stmt.run(key, value.trim())));
+  tx(Object.entries(changes).filter(([key, value]) => SETTING_KEYS.includes(key) && typeof value === 'string'));
+  return getSettings();
+}
+
 module.exports = {
   listPersonas,
   getPersona,
@@ -140,6 +165,8 @@ module.exports = {
   countMessages,
   getOldestUnsummarized,
   foldMessages,
+  getSettings,
+  updateSettings,
   SUMMARY_THRESHOLD,
   KEEP_RECENT,
 };

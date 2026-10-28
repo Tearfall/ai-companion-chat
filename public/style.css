@@ -30,13 +30,17 @@ body {
   display: none !important;
 }
 
-/* Setup screen */
-#setup-screen {
-  align-items: center;
-  justify-content: center;
+/* Setup screen (also used by the settings screen). The card centers itself with margin: auto
+   instead of align/justify-content: center, so a card taller than the screen scrolls instead of
+   getting its top cut off. */
+#setup-screen,
+#settings-screen {
+  overflow-y: auto;
+  padding: 24px 0;
 }
 
 .setup-card {
+  margin: auto;
   background: var(--surface);
   border-radius: 16px;
   padding: 32px;
@@ -51,6 +55,12 @@ body {
   margin: 0 0 12px;
   font-size: 22px;
   color: var(--primary-dark);
+}
+
+.setup-card .hint {
+  margin: -8px 0 4px;
+  font-size: 13px;
+  color: var(--muted);
 }
 
 .setup-card label {
@@ -68,6 +78,22 @@ body {
   font-size: 14px;
   font-family: inherit;
   resize: vertical;
+}
+
+.setup-card .field-hint {
+  margin: 0;
+  font-size: 12.5px;
+  line-height: 1.4;
+  color: var(--muted);
+}
+
+.setup-card .label-note {
+  font-weight: 400;
+}
+
+.secondary-btn:disabled {
+  opacity: 0.6;
+  cursor: default;
 }
 
 .avatar-grid {
@@ -94,7 +120,8 @@ body {
   border-color: var(--primary);
 }
 
-#create-btn {
+#save-btn,
+#settings-save-btn {
   margin-top: 18px;
   background: var(--primary);
   color: white;
@@ -106,8 +133,15 @@ body {
   cursor: pointer;
 }
 
-#create-btn:hover {
+#save-btn:hover,
+#settings-save-btn:hover {
   background: var(--primary-dark);
+}
+
+#save-btn:disabled,
+#settings-save-btn:disabled {
+  opacity: 0.6;
+  cursor: default;
 }
 
 .error {
