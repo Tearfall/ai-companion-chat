@@ -1,5 +1,26 @@
 const AVATAR_OPTIONS = ['🙂', '😊', '😉', '🥰', '😎', '🌙', '⭐', '🌸', '🦊', '🐱'];
 const ACTIVE_PERSONA_KEY = 'activePersonaId';
+const THEME_KEY = 'theme';
+const THEME_ACCENTS = { afterglow: '#c24a2f', minimal: '#4f46e5', vibrant: '#7c3aed' };
+
+const themeSwitcher = document.getElementById('theme-switcher');
+const themeColorMeta = document.getElementById('theme-color-meta');
+
+function applyTheme(theme) {
+  if (!THEME_ACCENTS[theme]) theme = 'afterglow';
+  document.documentElement.dataset.theme = theme;
+  themeColorMeta.setAttribute('content', THEME_ACCENTS[theme]);
+  themeSwitcher.querySelectorAll('.theme-swatch').forEach((btn) => {
+    btn.classList.toggle('active', btn.dataset.themeChoice === theme);
+  });
+  localStorage.setItem(THEME_KEY, theme);
+}
+
+applyTheme(localStorage.getItem(THEME_KEY) || 'afterglow');
+
+themeSwitcher.querySelectorAll('.theme-swatch').forEach((btn) => {
+  btn.addEventListener('click', () => applyTheme(btn.dataset.themeChoice));
+});
 
 const personaListScreen = document.getElementById('persona-list-screen');
 const personaCardsEl = document.getElementById('persona-cards');

@@ -1,12 +1,13 @@
 <!doctype html>
-<html lang="en">
+<html lang="en" data-theme="afterglow">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Companion Chat</title>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:ital,wght@0,400;0,600;1,500&family=Work+Sans:wght@400;500;600;700&family=Inter:wght@400;500;600;700&family=Fredoka:wght@500;600&family=Plus+Jakarta+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@500&display=swap" />
   <link rel="stylesheet" href="style.css" />
   <link rel="manifest" href="manifest.json" />
-  <meta name="theme-color" content="#db2777" />
+  <meta name="theme-color" content="#c24a2f" id="theme-color-meta" />
   <link rel="apple-touch-icon" href="icons/icon-192.png" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-title" content="Companion" />
@@ -15,6 +16,11 @@
   <div id="persona-list-screen" class="screen hidden">
     <div class="persona-list-card">
       <h1>Your companions</h1>
+      <div id="theme-switcher" class="theme-switcher">
+        <button type="button" class="theme-swatch" data-theme-choice="afterglow"><span class="theme-swatch-dot" style="background:#c24a2f"></span>Afterglow</button>
+        <button type="button" class="theme-swatch" data-theme-choice="minimal"><span class="theme-swatch-dot" style="background:#4f46e5"></span>Minimal</button>
+        <button type="button" class="theme-swatch" data-theme-choice="vibrant"><span class="theme-swatch-dot" style="background:#7c3aed"></span>Vibrant</button>
+      </div>
       <div id="persona-cards" class="persona-cards"></div>
       <button id="new-persona-btn" class="new-persona-btn">+ New persona</button>
       <button id="settings-btn" class="secondary-btn">&#9881; Instructions for all companions</button>
