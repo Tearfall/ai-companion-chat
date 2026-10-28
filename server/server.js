@@ -60,6 +60,15 @@ app.get('/api/personas/:id/messages', (req, res) => {
   res.json({ messages: db.getAllMessages(persona.id) });
 });
 
+app.post('/api/personas/:id/undo-last-turn', (req, res) => {
+  const persona = db.getPersona(req.params.id);
+  if (!persona) return res.status(404).json({ error: 'persona not found' });
+
+  const undone = db.undoLastTurn(persona.id);
+  if (!undone) return res.status(409).json({ error: 'There is no recent turn to undo.' });
+  res.json({ ...undone, messages: db.getAllMessages(persona.id) });
+});
+
 app.post('/api/personas/:id/chat', async (req, res) => {
   try {
     const persona = db.getPersona(req.params.id);
@@ -86,7 +95,7 @@ app.post('/api/personas/:id/chat', async (req, res) => {
     });
 
     db.addMessage(persona.id, 'user', message);
-    db.addMessage(persona.id, 'assistant', reply);
+    db.addMessage(persona.id, 'assistant', reply, persona.mood);
     const mood = db.adjustMood(persona.id, moodDelta);
 
     maybeFoldMemory(persona.id).catch((err) =>

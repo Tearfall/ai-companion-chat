@@ -46,6 +46,7 @@ const skipToClose = document.getElementById('skip-to-close');
 const skipToForm = document.getElementById('skip-to-form');
 const skipToInput = document.getElementById('skip-to-input');
 const doBtn = document.getElementById('do-btn');
+const undoLastTurnBtn = document.getElementById('undo-last-turn-btn');
 
 // session commands (defined in instructions.txt), shown as a small chip instead of a user bubble
 const COMMAND_LABELS = {
@@ -83,6 +84,7 @@ let editingPersonaId = null; // null = create mode in setup screen
 let activeChatPersona = null; // persona object currently shown in chat screen
 let knownPersonaCount = 0;
 let sending = false; // a chat request is in flight
+let undoAvailable = false;
 let skipToRequestId = 0; // ignores suggestion responses that arrive after the panel was closed or reopened
 
 function hideAllScreens() {
@@ -387,12 +389,17 @@ function renderMessages(messages) {
   messagesEl.innerHTML = '';
   messages.forEach((m) => (m.role === 'assistant' ? addAssistantTurn(m.content) : addBubble(m.role, m.content)));
   messagesEl.scrollTop = messagesEl.scrollHeight;
+  undoAvailable = messages.at(-1)?.role === 'user' ||
+    (messages.at(-1)?.role === 'assistant' && messages.at(-2)?.role === 'user');
+  undoLastTurnBtn.disabled = sending || !navigator.onLine || !undoAvailable;
 }
 
 function setComposerDisabled(disabled) {
   chatInput.disabled = disabled;
   chatForm.querySelector('button[type="submit"]').disabled = disabled;
-  commandBar.querySelectorAll('button').forEach((btn) => (btn.disabled = disabled));
+  commandBar.querySelectorAll('button').forEach((btn) => {
+    btn.disabled = disabled || (btn === undoLastTurnBtn && !undoAvailable);
+  });
   skipToPanel.querySelectorAll('button, input').forEach((el) => (el.disabled = disabled));
 }
 
@@ -481,10 +488,30 @@ async function sendMessage(text, { fromInput = false } = {}) {
       if (!res.ok) throw new Error(data.error || 'Failed to get a reply');
       pending.replaceWith(buildAssistantTurn(data.reply));
       setMood(data.mood);
+      undoAvailable = true;
     } catch (err) {
       pending.classList.remove('pending');
       pending.textContent = `Couldn't send that: ${err.message}`;
       if (fromInput) chatInput.value = text;
+    }
+  });
+  chatInput.focus();
+}
+
+async function undoLastTurn() {
+  if (!activeChatPersona || sending || !undoAvailable) return;
+
+  const persona = activeChatPersona;
+  await withComposerLocked(async () => {
+    try {
+      const res = await fetch(`/api/personas/${persona.id}/undo-last-turn`, { method: 'POST' });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Failed to undo the last turn');
+      renderMessages(data.messages);
+      setMood(data.mood);
+      chatInput.value = data.restoredMessage;
+    } catch (err) {
+      addBubble('assistant', `Couldn't undo the last turn: ${err.message}`);
     }
   });
   chatInput.focus();
@@ -626,6 +653,8 @@ commandBar.querySelectorAll('[data-command]').forEach((btn) => {
     sendMessage(btn.dataset.command);
   });
 });
+
+undoLastTurnBtn.addEventListener('click', undoLastTurn);
 
 doBtn.addEventListener('click', () => {
   closeSkipToPanel();

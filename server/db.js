@@ -22,6 +22,7 @@ db.exec(`
     persona_id INTEGER NOT NULL REFERENCES personas(id) ON DELETE CASCADE,
     role TEXT NOT NULL CHECK (role IN ('user', 'assistant')),
     content TEXT NOT NULL,
+    mood_before INTEGER,
     created_at TEXT NOT NULL DEFAULT (datetime('now'))
   );
 
@@ -32,6 +33,10 @@ db.exec(`
     value TEXT NOT NULL DEFAULT ''
   );
 `);
+
+if (!db.prepare('PRAGMA table_info(messages)').all().some((column) => column.name === 'mood_before')) {
+  db.exec('ALTER TABLE messages ADD COLUMN mood_before INTEGER');
+}
 
 // global settings shared by every persona: custom instructions and what the user has told us about themselves
 const SETTING_KEYS = ['custom_instructions', 'user_context'];
@@ -98,11 +103,12 @@ function adjustMood(personaId, delta) {
   return next;
 }
 
-function addMessage(personaId, role, content) {
-  db.prepare('INSERT INTO messages (persona_id, role, content) VALUES (?, ?, ?)').run(
+function addMessage(personaId, role, content, moodBefore = null) {
+  db.prepare('INSERT INTO messages (persona_id, role, content, mood_before) VALUES (?, ?, ?, ?)').run(
     personaId,
     role,
-    content
+    content,
+    moodBefore
   );
 }
 
@@ -117,6 +123,37 @@ function getAllMessages(personaId) {
   return db
     .prepare('SELECT role, content, created_at FROM messages WHERE persona_id = ? ORDER BY id ASC')
     .all(personaId);
+}
+
+function undoLastTurn(personaId) {
+  const undo = db.transaction(() => {
+    const [latest, previous] = db
+      .prepare('SELECT id, role, content, mood_before FROM messages WHERE persona_id = ? ORDER BY id DESC LIMIT 2')
+      .all(personaId);
+
+    if (!latest) return null;
+
+    let ids;
+    let restoredMessage;
+    if (latest.role === 'assistant' && previous?.role === 'user') {
+      ids = [latest.id, previous.id];
+      restoredMessage = previous.content;
+    } else if (latest.role === 'user') {
+      ids = [latest.id];
+      restoredMessage = latest.content;
+    } else {
+      return null;
+    }
+
+    const deleteMessage = db.prepare('DELETE FROM messages WHERE id = ? AND persona_id = ?');
+    ids.forEach((id) => deleteMessage.run(id, personaId));
+    if (latest.role === 'assistant' && Number.isInteger(latest.mood_before)) {
+      db.prepare('UPDATE personas SET mood = ? WHERE id = ?').run(latest.mood_before, personaId);
+    }
+    return { restoredMessage, mood: getPersona(personaId).mood };
+  });
+
+  return undo();
 }
 
 function countMessages(personaId) {
@@ -174,6 +211,7 @@ module.exports = {
   addMessage,
   getRecentMessages,
   getAllMessages,
+  undoLastTurn,
   countMessages,
   getOldestUnsummarized,
   foldMessages,
