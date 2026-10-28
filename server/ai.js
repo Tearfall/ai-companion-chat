@@ -147,7 +147,9 @@ async function getReply({ name, persona, mood, memorySummary, history }) {
   ];
 
   const text = await callAI(messages, { maxTokens: 400, temperature: 0.9 });
-  return stripMoodTag(text);
+  const result = stripMoodTag(text);
+  if (!result.reply) throw new Error('the AI replied with nothing but the mood tag');
+  return result;
 }
 
 async function summarizeConversation({ name, previousSummary, messagesToFold }) {
@@ -169,7 +171,11 @@ async function summarizeConversation({ name, previousSummary, messagesToFold }) 
     },
   ];
 
-  const text = await callAI(messages, { maxTokens: 300, temperature: 0.3 });
+  // The note replaces the old one and the messages it covers get deleted, so it must be complete:
+  // with 300 tokens, gpt-oss's thinking left room for only part of the note (3 of 3 test runs were
+  // cut off). 1000 tokens plus low reasoning fits it, and `complete` rejects a cut-off note so the
+  // fold is skipped (and retried later) instead of saving a fragment.
+  const text = await callAI(messages, { maxTokens: 1000, temperature: 0.3, reasoningEffort: 'low', complete: true });
   return text.trim();
 }
 

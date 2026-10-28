@@ -55,9 +55,10 @@ app.post('/api/personas/:id/chat', async (req, res) => {
       return res.status(400).json({ error: 'message is required' });
     }
 
-    db.addMessage(persona.id, 'user', message);
-
-    const history = db.getRecentMessages(persona.id, db.KEEP_RECENT);
+    // Send everything not yet folded into memory_summary, so no message falls between the two. The
+    // new message is only stored once a reply comes back: when the AI fails, the client puts the
+    // text back for a retry, and storing it up front would leave a duplicate in the history.
+    const history = [...db.getRecentMessages(persona.id, db.SUMMARY_THRESHOLD), { role: 'user', content: message }];
     const { reply, moodDelta } = await getReply({
       name: persona.name,
       persona: persona.persona,
@@ -66,11 +67,12 @@ app.post('/api/personas/:id/chat', async (req, res) => {
       history,
     });
 
+    db.addMessage(persona.id, 'user', message);
     db.addMessage(persona.id, 'assistant', reply);
     const mood = db.adjustMood(persona.id, moodDelta);
 
-    maybeFoldMemory(persona).catch((err) =>
-      console.error('memory summarization failed:', err)
+    maybeFoldMemory(persona.id).catch((err) =>
+      console.error('memory summarization failed (the messages stay and are retried next turn):', err.message)
     );
 
     res.json({ reply, mood });
@@ -80,21 +82,32 @@ app.post('/api/personas/:id/chat', async (req, res) => {
   }
 });
 
-async function maybeFoldMemory(persona) {
-  const total = db.countMessages(persona.id);
-  if (total < db.SUMMARY_THRESHOLD) return;
+// A fold runs in the background after a reply and can take a while; without this, every message sent
+// meanwhile would start another one over the same messages, extending an outdated memory note.
+const foldsInProgress = new Set();
 
-  const toFold = db.getOldestUnsummarized(persona.id);
-  if (!toFold.length) return;
+async function maybeFoldMemory(personaId) {
+  if (foldsInProgress.has(personaId)) return;
+  foldsInProgress.add(personaId);
+  try {
+    if (db.countMessages(personaId) < db.SUMMARY_THRESHOLD) return;
 
-  const summary = await summarizeConversation({
-    name: persona.name,
-    previousSummary: persona.memory_summary,
-    messagesToFold: toFold,
-  });
+    const toFold = db.getOldestUnsummarized(personaId);
+    const persona = db.getPersona(personaId); // read now, so the newest memory note is the one extended
+    if (!toFold.length || !persona) return;
 
-  db.setMemorySummary(persona.id, summary);
-  db.deleteMessagesById(toFold.map((m) => m.id));
+    // throws rather than returning a cut-off or empty note, which leaves the messages in place to be
+    // folded on a later turn instead of being replaced by a fragment
+    const summary = await summarizeConversation({
+      name: persona.name,
+      previousSummary: persona.memory_summary,
+      messagesToFold: toFold,
+    });
+
+    db.foldMessages(personaId, summary, toFold.map((m) => m.id));
+  } finally {
+    foldsInProgress.delete(personaId);
+  }
 }
 
 const PORT = process.env.PORT || 3000;

@@ -79,10 +79,6 @@ function adjustMood(personaId, delta) {
   return next;
 }
 
-function setMemorySummary(personaId, summary) {
-  db.prepare('UPDATE personas SET memory_summary = ? WHERE id = ?').run(summary, personaId);
-}
-
 function addMessage(personaId, role, content) {
   db.prepare('INSERT INTO messages (persona_id, role, content) VALUES (?, ?, ?)').run(
     personaId,
@@ -120,11 +116,15 @@ function getOldestUnsummarized(personaId, limit = Infinity) {
     .all(personaId, cutoff);
 }
 
-function deleteMessagesById(ids) {
-  if (!ids.length) return;
-  const stmt = db.prepare('DELETE FROM messages WHERE id = ?');
-  const tx = db.transaction((idList) => idList.forEach((id) => stmt.run(id)));
-  tx(ids);
+// Saves the new memory note and drops the messages it now covers in one transaction, so a crash in
+// between can't leave messages both summarized and still in the history, or deleted unsummarized.
+function foldMessages(personaId, summary, ids) {
+  const updateSummary = db.prepare('UPDATE personas SET memory_summary = ? WHERE id = ?');
+  const deleteMessage = db.prepare('DELETE FROM messages WHERE id = ?');
+  db.transaction(() => {
+    updateSummary.run(summary, personaId);
+    ids.forEach((id) => deleteMessage.run(id));
+  })();
 }
 
 module.exports = {
@@ -134,13 +134,12 @@ module.exports = {
   updatePersona,
   deletePersona,
   adjustMood,
-  setMemorySummary,
   addMessage,
   getRecentMessages,
   getAllMessages,
   countMessages,
   getOldestUnsummarized,
-  deleteMessagesById,
+  foldMessages,
   SUMMARY_THRESHOLD,
   KEEP_RECENT,
 };

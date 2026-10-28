@@ -37,10 +37,10 @@ install it as an app via the browser's "Add to Home Screen" / install prompt.
 - **Personas** — create as many companions as you like, each with its own name, avatar, and
   personality/backstory blurb (becomes part of that persona's system prompt). Switch between
   them from the persona list screen; each persona keeps its own independent mood and memory.
-- **Memory** — all messages are stored per-persona in a local SQLite file (`data.sqlite`). Once
-  a persona's conversation grows past ~40 messages, the oldest ones are folded into a running
-  summary (via an AI call) so it remembers the relationship's history without the context
-  window growing without bound.
+- **Memory** — all messages are stored per-persona in a local SQLite file (`data.sqlite`), and
+  every not-yet-summarized message is sent with each request. Once a persona's conversation
+  grows past ~40 messages, the oldest ones are folded into a running summary (via an AI call)
+  so it remembers the relationship's history without the context window growing without bound.
 - **Mood** — the model is asked to append a hidden `[[mood:+N]]` / `[[mood:-N]]` tag after each
   reply reflecting how that exchange affected the relationship; the server strips the tag,
   applies the delta to a 0–100 mood score per persona, and the UI shows it as a bar.
