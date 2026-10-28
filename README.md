@@ -83,8 +83,6 @@ install it as an app via the browser's "Add to Home Screen" / install prompt.
   offline. Sending a new message still needs a connection and fails gracefully (with a visible
   banner) if you're offline.
 
-The system prompt explicitly keeps romance PG-13 and disallows explicit sexual content.
-
 ## Notes
 
 This is a single-user, local app (no auth, no multi-tenancy) — everything lives in one SQLite
