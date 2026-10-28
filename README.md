@@ -1,8 +1,8 @@
 # AI Companion Chat
 
 A PWA companion chatbot: a chat UI with customizable, switchable personas, persistent
-per-persona conversation memory, an avatar, and a mood/relationship meter. Powered by the free
-Groq API.
+per-persona conversation memory, an avatar, and a mood/relationship meter. Powered by free AI
+providers with automatic fallback.
 
 ## Setup
 
@@ -12,8 +12,16 @@ cp .env.example .env
 python scripts/generate-icons.py
 ```
 
-Edit `.env` and set `GROQ_API_KEY` to your Groq API key (free, no card needed — get one at
-console.groq.com).
+Edit `.env` and set at least one provider's API key — all are free, no card needed:
+- `CEREBRAS_API_KEY` — cloud.cerebras.ai
+- `GROQ_API_KEY` — console.groq.com
+- `OPENROUTER_API_KEY` — openrouter.ai
+
+Set more than one and the app tries them **in that order** on every request, moving on to the
+next whenever one fails for any reason: rate limit, retired model, bad key, a 45-second timeout,
+or an empty reply. See `server/ai.js`'s `PROVIDERS` list to reorder them or change models
+(`*_MODEL` in `.env.example`). Free-tier model names get retired now and then; if the server log
+keeps showing "model not found" for a provider, check its model list and update the `*_MODEL` line.
 
 ## Run
 
@@ -31,7 +39,7 @@ install it as an app via the browser's "Add to Home Screen" / install prompt.
   them from the persona list screen; each persona keeps its own independent mood and memory.
 - **Memory** — all messages are stored per-persona in a local SQLite file (`data.sqlite`). Once
   a persona's conversation grows past ~40 messages, the oldest ones are folded into a running
-  summary (via a Groq call) so it remembers the relationship's history without the context
+  summary (via an AI call) so it remembers the relationship's history without the context
   window growing without bound.
 - **Mood** — the model is asked to append a hidden `[[mood:+N]]` / `[[mood:-N]]` tag after each
   reply reflecting how that exchange affected the relationship; the server strips the tag,

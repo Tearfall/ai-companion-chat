@@ -2,7 +2,7 @@ require('dotenv').config();
 const path = require('path');
 const express = require('express');
 const db = require('./db');
-const { getReply, summarizeConversation } = require('./groq');
+const { getReply, summarizeConversation } = require('./ai');
 
 const app = express();
 app.use(express.json());

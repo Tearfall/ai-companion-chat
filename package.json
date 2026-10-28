@@ -1,7 +1,7 @@
 {
   "name": "ai-companion-chat",
   "version": "1.0.0",
-  "description": "A multi-persona AI companion chat PWA with memory and mood, powered by the free Groq API.",
+  "description": "A multi-persona AI companion chat PWA with memory and mood, powered by free AI providers (Cerebras, Groq, OpenRouter) with automatic fallback.",
   "main": "server/server.js",
   "type": "commonjs",
   "scripts": {
