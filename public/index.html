@@ -53,8 +53,19 @@
 
       <button id="save-btn">Start chatting</button>
       <button id="back-btn" class="secondary-btn hidden">Back</button>
-      <button id="delete-btn" class="delete-persona-btn hidden">Delete this persona</button>
       <p id="setup-error" class="error"></p>
+
+      <div id="danger-zone" class="danger-zone hidden">
+        <button id="reset-btn" class="reset-persona-btn">Reset conversation</button>
+        <div id="reset-confirm" class="confirm-row hidden">
+          <p>Clear all messages and restart mood &amp; memory? Name, personality, and avatar stay.</p>
+          <div class="confirm-actions">
+            <button type="button" id="reset-cancel-btn" class="ghost-btn">Cancel</button>
+            <button type="button" id="reset-confirm-btn" class="confirm-solid-btn">Yes, reset</button>
+          </div>
+        </div>
+        <button id="delete-btn" class="delete-persona-btn">Delete this persona</button>
+      </div>
     </div>
   </div>
 

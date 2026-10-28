@@ -42,6 +42,12 @@ app.put('/api/personas/:id', (req, res) => {
   res.json({ persona: updated });
 });
 
+app.post('/api/personas/:id/reset', (req, res) => {
+  const persona = db.resetPersona(req.params.id);
+  if (!persona) return res.status(404).json({ error: 'persona not found' });
+  res.json({ persona });
+});
+
 app.delete('/api/personas/:id', (req, res) => {
   const deleted = db.deletePersona(req.params.id);
   if (!deleted) return res.status(404).json({ error: 'persona not found' });

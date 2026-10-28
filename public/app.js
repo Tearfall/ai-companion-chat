@@ -22,6 +22,11 @@ const saveBtn = document.getElementById('save-btn');
 const backBtn = document.getElementById('back-btn');
 const deleteBtn = document.getElementById('delete-btn');
 const setupError = document.getElementById('setup-error');
+const dangerZone = document.getElementById('danger-zone');
+const resetBtn = document.getElementById('reset-btn');
+const resetConfirm = document.getElementById('reset-confirm');
+const resetCancelBtn = document.getElementById('reset-cancel-btn');
+const resetConfirmBtn = document.getElementById('reset-confirm-btn');
 
 const chatScreen = document.getElementById('chat-screen');
 const switchPersonaBtn = document.getElementById('switch-persona-btn');
@@ -158,20 +163,23 @@ function showSetupScreen(persona) {
   editingPersonaId = persona ? persona.id : null;
   setupError.textContent = '';
 
+  resetConfirm.classList.add('hidden');
+  resetBtn.classList.remove('hidden');
+
   if (persona) {
     setupTitle.textContent = `Edit ${persona.name}`;
     nameInput.value = persona.name;
     personaInput.value = persona.persona;
     selectedAvatar = persona.avatar;
     saveBtn.textContent = 'Save changes';
-    deleteBtn.classList.remove('hidden');
+    dangerZone.classList.remove('hidden');
   } else {
     setupTitle.textContent = 'Create your companion';
     nameInput.value = '';
     personaInput.value = '';
     selectedAvatar = AVATAR_OPTIONS[0];
     saveBtn.textContent = 'Start chatting';
-    deleteBtn.classList.add('hidden');
+    dangerZone.classList.add('hidden');
   }
 
   backBtn.classList.toggle('hidden', knownPersonaCount === 0);
@@ -309,6 +317,30 @@ saveBtn.addEventListener('click', async () => {
     setupError.textContent = err.message;
   } finally {
     saveBtn.disabled = false;
+  }
+});
+
+resetBtn.addEventListener('click', () => {
+  resetBtn.classList.add('hidden');
+  resetConfirm.classList.remove('hidden');
+});
+
+resetCancelBtn.addEventListener('click', () => {
+  resetConfirm.classList.add('hidden');
+  resetBtn.classList.remove('hidden');
+});
+
+resetConfirmBtn.addEventListener('click', async () => {
+  if (editingPersonaId == null) return;
+  resetConfirmBtn.disabled = true;
+  try {
+    const res = await fetch(`/api/personas/${editingPersonaId}/reset`, { method: 'POST' });
+    if (!res.ok) throw new Error('Failed to reset persona');
+    await openChat(editingPersonaId);
+  } catch (err) {
+    setupError.textContent = err.message;
+  } finally {
+    resetConfirmBtn.disabled = false;
   }
 });
 

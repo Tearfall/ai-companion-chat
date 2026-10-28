@@ -68,6 +68,17 @@ function updatePersona(id, { name, persona, avatar }) {
   return getPersona(id);
 }
 
+function resetPersona(id) {
+  const existing = getPersona(id);
+  if (!existing) return null;
+  const tx = db.transaction((personaId) => {
+    db.prepare('DELETE FROM messages WHERE persona_id = ?').run(personaId);
+    db.prepare("UPDATE personas SET mood = 50, memory_summary = '' WHERE id = ?").run(personaId);
+  });
+  tx(id);
+  return getPersona(id);
+}
+
 function deletePersona(id) {
   const existing = getPersona(id);
   if (!existing) return false;
@@ -157,6 +168,7 @@ module.exports = {
   getPersona,
   createPersona,
   updatePersona,
+  resetPersona,
   deletePersona,
   adjustMood,
   addMessage,
