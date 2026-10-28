@@ -1,4 +1,4 @@
-const CACHE_VERSION = 'v1';
+const CACHE_VERSION = 'v10';
 const SHELL_CACHE = `companion-shell-${CACHE_VERSION}`;
 const RUNTIME_CACHE = `companion-runtime-${CACHE_VERSION}`;
 
