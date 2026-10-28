@@ -86,6 +86,28 @@
 
     <main id="messages" class="messages"></main>
 
+    <div id="skip-to-panel" class="skip-to-panel hidden">
+      <div class="skip-to-header">
+        <span>Skip to…</span>
+        <button type="button" id="skip-to-close" class="skip-to-close" title="Close">&times;</button>
+      </div>
+      <div id="skip-to-options" class="skip-to-options"></div>
+      <form id="skip-to-form" class="skip-to-form">
+        <input id="skip-to-input" type="text" autocomplete="off" placeholder="Or type your own moment…" />
+        <button type="submit">Go</button>
+      </form>
+    </div>
+
+    <!-- each data-command is sent as the message text; the commands are defined in instructions.txt -->
+    <div id="command-bar" class="command-bar">
+      <button type="button" class="command-btn primary" data-command="CONTINUE" title="Nothing to say? Let the scene keep going">&#9654; Continue</button>
+      <button type="button" class="command-btn" id="do-btn" title="Describe something your character does, instead of says">&#128694; Do something</button>
+      <button type="button" class="command-btn" data-command="SKIP TIME" title="Jump forward in time">&#9193; Skip time</button>
+      <button type="button" class="command-btn" data-command="SKIP SCENE" title="Move to a new scene">&#127916; Skip scene</button>
+      <button type="button" class="command-btn" id="skip-to-btn" title="Jump to a specific moment">&#127919; Skip to…</button>
+      <button type="button" class="command-btn" data-command="RECAP" title="Summarize the scene so far">&#128221; Recap</button>
+    </div>
+
     <form id="chat-form" class="chat-form">
       <input id="chat-input" type="text" autocomplete="off" placeholder="Say something..." />
       <button type="submit">Send</button>

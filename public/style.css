@@ -240,9 +240,72 @@ body {
 
 .bubble.assistant {
   align-self: flex-start;
+  max-width: 85%;
   background: var(--bubble-assistant);
   color: var(--text);
   border-bottom-left-radius: 4px;
+}
+
+/* Three-layer roleplay replies: narrative centered, dialogue in a bubble, inner thoughts
+   float left-aligned under the bubble (built by buildAssistantTurn in app.js) */
+.assistant-turn {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 6px;
+}
+
+.layer-narrative {
+  align-self: center;
+  max-width: 90%;
+  text-align: center;
+  font-style: italic;
+  font-size: 13.5px;
+  color: var(--muted);
+  margin: 2px 0;
+  white-space: pre-wrap;
+}
+
+/* A "DO ..." action narrated by the user — same centered/italic layout as the AI's own
+   narration, but tinted with the theme accent so it's clear at a glance that it came from you */
+.layer-narrative.user-narrative {
+  color: var(--primary-dark);
+}
+
+/* Wraps a user's DO action: the narrative line plus any quoted dialogue split out of it */
+.user-turn {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.layer-thought-caption {
+  max-width: 85%;
+  font-style: italic;
+  font-size: 12.5px;
+  color: var(--muted);
+  padding-left: 8px;
+  border-left: 2px solid var(--primary);
+  margin-top: -2px;
+  white-space: pre-wrap;
+}
+
+.layer-thought-caption::before {
+  content: '💭 ';
+  font-style: normal;
+}
+
+/* Session commands sent from the command bar */
+.command-chip {
+  align-self: center;
+  max-width: 85%;
+  padding: 3px 10px;
+  border-radius: 12px;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--muted);
+  font-size: 12px;
+  text-align: center;
 }
 
 .bubble.pending {
@@ -466,4 +529,139 @@ body {
   font-size: 13px;
   text-align: center;
   padding: 6px 12px;
+}
+
+/* Command bar (Continue, Skip time, ...) above the chat input */
+.command-bar {
+  display: flex;
+  gap: 6px;
+  padding: 10px 18px 0;
+  background: var(--surface);
+  border-top: 1px solid var(--border);
+  overflow-x: auto;
+  scrollbar-width: thin;
+}
+
+.command-bar + .chat-form {
+  border-top: none;
+  padding-top: 10px;
+}
+
+.command-btn {
+  flex-shrink: 0;
+  white-space: nowrap;
+  background: transparent;
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 6px 12px;
+  font-size: 13px;
+  font-family: inherit;
+  cursor: pointer;
+}
+
+.command-btn:hover {
+  background: var(--bubble-assistant);
+}
+
+.command-btn.primary {
+  background: var(--primary);
+  border-color: var(--primary);
+  color: white;
+  font-weight: 600;
+}
+
+.command-btn.primary:hover {
+  background: var(--primary-dark);
+}
+
+.command-btn:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+/* Skip-to panel: AI-suggested moments plus a custom one */
+.skip-to-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 12px 18px;
+  background: var(--surface);
+  border-top: 1px solid var(--border);
+}
+
+.skip-to-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-weight: 600;
+  font-size: 14px;
+  color: var(--primary-dark);
+}
+
+.skip-to-close {
+  background: transparent;
+  border: none;
+  font-size: 20px;
+  line-height: 1;
+  color: var(--muted);
+  cursor: pointer;
+}
+
+.skip-to-options {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.skip-to-status {
+  margin: 0;
+  font-size: 13px;
+  color: var(--muted);
+}
+
+.skip-to-option {
+  text-align: left;
+  background: var(--bubble-assistant);
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 8px 12px;
+  font-size: 14px;
+  font-family: inherit;
+  cursor: pointer;
+}
+
+.skip-to-option:hover {
+  border-color: var(--primary);
+}
+
+.skip-to-form {
+  display: flex;
+  gap: 8px;
+}
+
+#skip-to-input {
+  flex: 1;
+  min-width: 0;
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  padding: 8px 14px;
+  font-size: 14px;
+}
+
+.skip-to-form button {
+  background: var(--primary);
+  color: white;
+  border: none;
+  border-radius: 20px;
+  padding: 8px 16px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.skip-to-option:disabled,
+.skip-to-form button:disabled {
+  opacity: 0.5;
+  cursor: default;
 }

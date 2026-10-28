@@ -2,7 +2,7 @@ require('dotenv').config();
 const path = require('path');
 const express = require('express');
 const db = require('./db');
-const { getReply, summarizeConversation } = require('./ai');
+const { getReply, summarizeConversation, suggestSkipTargets } = require('./ai');
 
 const app = express();
 app.use(express.json());
@@ -97,6 +97,24 @@ app.post('/api/personas/:id/chat', async (req, res) => {
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: 'failed to get a reply' });
+  }
+});
+
+app.post('/api/personas/:id/skip-suggestions', async (req, res) => {
+  try {
+    const persona = db.getPersona(req.params.id);
+    if (!persona) return res.status(404).json({ error: 'persona not found' });
+
+    const suggestions = await suggestSkipTargets({
+      name: persona.name,
+      persona: persona.persona,
+      memorySummary: persona.memory_summary,
+      history: db.getRecentMessages(persona.id, db.SUMMARY_THRESHOLD),
+    });
+    res.json({ suggestions });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'failed to get suggestions' });
   }
 });
 

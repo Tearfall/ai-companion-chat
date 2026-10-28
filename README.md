@@ -23,6 +23,14 @@ or an empty reply. See `server/ai.js`'s `PROVIDERS` list to reorder them or chan
 (`*_MODEL` in `.env.example`). Free-tier model names get retired now and then; if the server log
 keeps showing "model not found" for a provider, check its model list and update the `*_MODEL` line.
 
+Free-tier limits as measured in October 2026 (each chat message is roughly 4,000–4,500 tokens,
+about 1,500 of them from `instructions.txt`, so trimming that file stretches every limit):
+- Cerebras `gpt-oss-120b`: 1M tokens/day (~230 messages), but only 5 requests/minute, 150/hour.
+- Groq `openai/gpt-oss-120b`: 200k tokens/day (~47 messages), 8k tokens/minute.
+- OpenRouter free models: a last resort; they're often rate-limited upstream.
+
+*Skip to…* and memory summaries each make one extra AI call.
+
 ## Run
 
 ```bash
@@ -41,6 +49,26 @@ install it as an app via the browser's "Add to Home Screen" / install prompt.
   fields that go into every persona's system prompt on every message: *About you* (facts you
   want every companion to know) and *How companions should respond* (style rules, like custom
   instructions in Claude/ChatGPT). They can't override the content guidelines.
+- **Static instructions** — `instructions.txt` in the project root holds fixed instructions sent
+  to every companion with every message, alongside the ones set in the app. Lines starting with
+  `#` are ignored, and the file is re-read on each message, so edits apply without a restart.
+  It currently turns every companion into an immersive roleplay communication trainer.
+- **Session commands** — the button row above the chat input sends the commands defined in
+  `instructions.txt` (Continue, Do something, Skip time, Skip scene, Skip to…, Recap) as your
+  message. *Continue* lets the scene move on a few seconds when you have nothing to say. *Do
+  something* narrates an action your character takes instead of something they say — it fills the
+  chat input with `DO ` (also typeable directly, case-sensitive) so you only need to describe the
+  action; the AI reacts to it in character, including embodied reactions (interjections, physical
+  responses) rather than just describing the cause. Add quoted text to say something at the same
+  time, e.g. `DO leans in and whispers, "I missed you"` — the quoted part is sent as a normal
+  dialogue bubble right under the action, so you're not limited to the action alone. *Skip to…*
+  asks the AI for a few likely moments to jump to, or takes your own.
+- **Three-layer replies** — replies labeled `Scene/Action:` / `Inner Thoughts:` / `Dialogue:`
+  render as three separate pieces instead of one bubble: narration renders centered with no
+  bubble, dialogue renders in a normal chat bubble, and inner thoughts render as a 💭 caption
+  left-aligned under the bubble. A `DO ` message you send renders the same way, except its
+  narration is tinted with the theme's accent color instead of the muted gray the AI's own
+  narration uses, so it's clear at a glance which one you wrote.
 - **Memory** — all messages are stored per-persona in a local SQLite file (`data.sqlite`), and
   every not-yet-summarized message is sent with each request. Once a persona's conversation
   grows past ~40 messages, the oldest ones are folded into a running summary (via an AI call)
